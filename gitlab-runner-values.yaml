@@ -2,15 +2,26 @@
 gitlabUrl: https://gitlab.com/ # or your self-hosted URL
 runnerToken: "glrt-YOUR_TOKEN_HERE" # ⚠️ Replace this!
 
+imagePullPolicy: IfNotPresent
+
 # Runner image
 image:
   registry: docker.io
   image: gitlab/gitlab-runner
-  tag: bleeding
+  tag: ubuntu
+
+# Security - in some helm/kubernetes collections there is problem with permissions
+# like "mkdir: cannot create directory '/home/gitlab-runner': Permission denied".
+# See: https://docs.gitlab.com/runner/install/kubernetes_helm_chart_configuration/#switch-to-the-ubuntu-based-gitlab-runner-docker-image)
+securityContext:
+  fsGroup: 999
+  runAsUser: 999
 
 # Scaling
 replicas: 2 # 2 manager pods for HA
-concurrent: 4 # Each manager handles 10 jobs max
+concurrent: 4 # each manager handles 4 jobs max
+
+checkInterval: 15 # define in sec how often the runner checks for new jobs
 
 # Kubernetes executor config
 runners:
@@ -29,5 +40,6 @@ runners:
         # Service containers (e.g., DinD)
         service_cpu_limit = "1"
         service_memory_limit = "4Gi"
+
         # Enable privileged mode (needed for Docker-in-Docker)
         privileged = true
