@@ -45,67 +45,30 @@ kubectl create namespace gitlab
 kubectl get namespace gitlab
 ```
 
-4. Configure the runner with values
+4. Configure the runner with values from `gitlab-runner-values.yaml`
 
-```
-# GitLab connection
-gitlabUrl: https://gitlab.com/  # or your self-hosted URL
-runnerToken: "glrt-YOUR_TOKEN_HERE"  # ⚠️ Replace this!
+- in `runnerToken` change the token to your token from step 2
 
-# Runner image
-image:
-  registry: docker.io
-  image: gitlab/gitlab-runner
-  tag: ubuntu
+> [!TIP]
+> Before running you can also check the details for more helm chart values with command:
+>
+> ```sh
+> # show available values
+> helm inspect values gitlab/gitlab-runner
+>
+> # or save values to a sample file
+> helm inspect values gitlab/gitlab-runner > custom-values.yaml
+> ```
 
-# security
-securityContext:
-  fsGroup: 999
-  runAsUser: 999
-
-# Scaling
-replicas: 2             # 2 manager pods for HA
-concurrent: 4           # each manager handles 4 jobs max
-
-# Kubernetes executor config
-runners:
-  config: |
-    [[runners]]
-      [runners.kubernetes]
-        namespace = "{{.Release.Namespace}}"
-        image = "alpine:latest"
-
-        # Resource limits (per job pod)
-        cpu_limit = "1"
-        memory_limit = "4Gi"
-        cpu_request = "500m"
-        memory_request = "512Mi"
-
-        # Service containers (e.g., DinD)
-        service_cpu_limit = "1"
-        service_memory_limit = "4Gi"
-
-        # Enable privileged mode (needed for Docker-in-Docker)
-        privileged = true
-```
-
-Before running you can also check the details for more helm chart values with command:
-
-```sh
-# show available values
-helm inspect values gitlab/gitlab-runner
-
-# same values to a file
-helm inspect values gitlab/gitlab-runner > custom-values.yaml
-```
-
-Check the available versions to install
+Check the available versions of `gitlab-runner` to install by:
 
 ```sh
 helm search repo -l gitlab/gitlab-runner
 ```
 
-5. Create user
+5. Create system user
+
+Creating user is optional, but may help with creating default directory used by gitlab-runner.
 
 ```sh
 sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
@@ -113,7 +76,7 @@ sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/
 
 5. Install helm chart
 
-you can also add specific version with `--version 0.84.2`, otherwise it will use latest one.
+You can also add specific version with `--version 0.84.2`, otherwise it will use latest one.
 
 ```sh
 helm install gitlab-runner \
@@ -127,6 +90,8 @@ helm install gitlab-runner \
 ```sh
 helm list --namespace gitlab
 ```
+
+Execute the sample job in gitlab pipeline in order to see job is picked successfully by runner.
 
 ## Need Upgrade
 
